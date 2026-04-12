@@ -1,0 +1,113 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+D = np.array([0.05, 0.1, 0.2, 0.4, 0.6, 0.7, 0.8, 0.84])
+X = np.array([3.2, 3.7, 4.0, 4.4, 4.75, 4.9, 4.5, 0.5])
+S = np.array([0.012, 0.028, 0.05, 0.1, 0.15, 0.176, 0.8, 9.0])
+
+S0 = 10  # feed substrate
+
+# -----------------------------
+# Part (a)
+
+def monod(S, mu_max, Ks):
+    return mu_max * S / (Ks + S)
+
+params, _ = curve_fit(monod, S, D, bounds=(0, np.inf))
+mu_max, Ks = params
+
+
+
+print("mu_max =", mu_max)
+print("Ks =", Ks)
+
+# -----------------------------
+# (b)  
+
+
+# Linearization
+y = D * (S0 - S) / X
+x = D
+
+# Linear fit
+coeffs = np.polyfit(x, y, 1)
+slope, intercept = coeffs
+
+# Extract parameters
+Yxs = 1 / slope
+m = intercept
+
+print("Yxs =", Yxs)
+print("m =", m)
+
+# Plot for report
+plt.figure()
+plt.scatter(x, y, label="Data")
+
+x_fit = np.linspace(min(x), max(x), 100)
+y_fit = slope * x_fit + intercept
+plt.plot(x_fit, y_fit, '--', label="Fit")
+
+plt.xlabel("D")
+plt.ylabel("D(S0 - S)/X")
+plt.title("Estimation of Yxs and m")
+plt.legend()
+plt.grid()
+plt.show()
+
+
+# -----------------------------
+# Part (c)
+
+D_max = mu_max * S0 / (Ks + S0)
+print("Dmax =", D_max)
+
+D_opt_theoretical = mu_max * (1 - np.sqrt(Ks / (Ks + S0)))
+print("Dopt (theoretical) =", D_opt_theoretical)
+
+# -----------------------------
+# Part (d,e)
+
+D_range = np.linspace(0.01, D_max*0.99, 100)
+
+S_model = Ks * D_range / (mu_max - D_range)
+X_model = (D_range * (S0 - S_model)) / ((D_range/Yxs) + m)
+P = D_range * X_model
+
+Ks_high = 10 * Ks
+S_high = Ks_high * D_range / (mu_max - D_range)
+X_high = (D_range * (S0 - S_model)) / ((D_range/Yxs) + m)
+X_high = np.maximum(X_high, 0)
+P_high = D_range * X_high
+
+# -----------------------------
+# Plot
+# -----------------------------
+plt.figure()
+plt.plot(D_range, X_model, label="Biomass X")
+plt.plot(D_range, S_model, label="Substrate S")
+plt.xlabel("Dilution rate D")
+plt.ylabel("Concentration")
+plt.legend()
+plt.title("Chemostat behavior")
+plt.show()
+
+# Productivity
+plt.figure()
+plt.plot(D_range, P, label="Productivity")
+plt.plot(D_range, P_high, label="Productivity with high Ks")
+plt.xlabel("D")
+plt.ylabel("Productivity DX")
+plt.legend()
+plt.title("Productivity vs D")
+plt.show()
+
+# -----------------------------
+# Part (f): Optimal D
+# -----------------------------
+D_opt = D_range[np.argmax(P)]
+P_max = np.max(P)
+
+print("Dopt =", D_opt)
+print("Max productivity =", P_max)
