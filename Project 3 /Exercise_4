@@ -1,0 +1,53 @@
+import pandas as pd
+import matplotlib as plt
+import numpy as np
+import scipy as sp
+from scipy.optimize import minimize
+
+
+#Parameters
+
+mu_max = 0.7
+Ks = 2.10E-2
+Yxs = 0.5
+alpha = 0.1
+beta = 0.02
+So = 1
+Po = 0
+
+#Functions
+def X(D):
+    return Yxs * (So - (Ks * D)/(mu_max - D))
+
+def S(D):
+    return (Ks * D)/(mu_max - D)
+
+def rx(S,X):
+    return ((mu_max * S)/(Ks + S)) * X
+
+def rs(S, X):
+    return ((mu_max * S)/((Ks + S) * Yxs)) * X
+
+def rp(X, rx):
+    return alpha * rx + beta * X
+
+
+#A. Optimal dilution rate to maximize PD (=rp)
+#maximize dDP/dD=0
+sim_D = np.linspace(0,5,100)
+sim_X = X(sim_D)
+sim_S = S(sim_D)
+sim_rx = rx(sim_S, sim_X)
+sim_rp = rp(sim_X, sim_rx)
+#dD = sim_D[1]-sim_D[0]
+#drp_dD = np.gradient(sim_rp, dD)
+max_rp = sim_rp[np.argmax(sim_rp)]
+
+#B. Optimal dilution rate to maximize PX (=rx)
+#maximize XD
+
+def XD(D):
+    return Yxs * D * (So - (Ks * D)/(mu_max - D))
+
+sim_XD = XD(sim_D)
+max_XD = sim_XD[np.argmax(sim_XD)]
